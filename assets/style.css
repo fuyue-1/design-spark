@@ -695,6 +695,12 @@ h2.section-title{
 }
 
 /* ---------- 打印 ---------- */
+.title-options{margin-top:22px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px 18px}
+.to-head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.to-label{font-size:12px;letter-spacing:.12em;color:var(--ink-3);font-weight:700}
+.title-options .hint{margin:0}
+.title-chip{text-align:left;line-height:1.5;max-width:100%}
+
 /* ---------- 通用页面内边距 ---------- */
 .page-pad{padding-top:44px;padding-bottom:88px}
 .page-pad-lg{padding-top:70px;padding-bottom:100px}

@@ -121,6 +121,12 @@
       frame.contentWindow.location.hash = firstHref;
       await wait(200);
       ok('进入题目详情', qa('.detail-main .d-block').length >= 6, String(qa('.detail-main .d-block').length));
+      ok('详情提供多个题目表述', qa('.title-chip').length >= 2, String(qa('.title-chip').length));
+
+      var titleBefore = q('.detail-head h1').textContent;
+      click(qa('.title-chip')[1]);
+      await wait(150);
+      ok('切换题目表述', q('.detail-head h1').textContent !== titleBefore, q('.detail-head h1').textContent.slice(0, 18));
 
       click(q('[data-action="fav"]'));
       await wait(60);
@@ -131,6 +137,7 @@
       await wait(80);
       var msg = q('#msg-text');
       ok('私信弹窗生成文案', msg && /老师您好/.test(msg.value) && /主要功能/.test(msg.value));
+      ok('私信使用所选表述', msg && msg.value.indexOf(q('.detail-head h1').textContent.trim()) > -1);
 
       click(q('.modal-head .x'));
       await wait(60);
@@ -145,7 +152,7 @@
 
       frame.contentWindow.location.hash = '#/library';
       await wait(200);
-      ok('题目库渲染 100 个', qa('#lib-grid .lib-card').length === 100, String(qa('#lib-grid .lib-card').length));
+      ok('题目库渲染 150 个', qa('#lib-grid .lib-card').length === 150, String(qa('#lib-grid .lib-card').length));
       type(q('#lib-search'), '养老');
       await wait(60);
       ok('题目库搜索', /共 [1-9]/.test(q('#lib-count').textContent), q('#lib-count').textContent);

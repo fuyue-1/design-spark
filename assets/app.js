@@ -67,7 +67,9 @@
     zap: '<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>',
     users: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M17 8.5a3 3 0 0 1 0 5.5M18 20a6 6 0 0 0-2-4.5"/>',
     compass: '<circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/>',
-    filter: '<path d="M3 5h18l-7 8v6l-4-2v-4z"/>'
+    filter: '<path d="M3 5h18l-7 8v6l-4-2v-4z"/>',
+    hand: '<path d="M8 12V6.5a1.5 1.5 0 0 1 3 0V11m0-4.5v-1a1.5 1.5 0 0 1 3 0v2m0-1a1.5 1.5 0 0 1 3 0V13c0 4-2.5 7-6.5 7S4 17 4 13v-2a1.5 1.5 0 0 1 3 0v1"/>',
+    play: '<circle cx="12" cy="12" r="9"/><path d="M10 8.5l6 3.5-6 3.5z"/>'
   };
   function icon(name, cls) {
     return '<svg class="' + (cls || '') + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (ICONS[name] || '') + '</svg>';
@@ -154,6 +156,22 @@
     return (x - Math.floor(x)) * 8 - 4;
   }
 
+  /* ---------------- 题目表述 ---------------- */
+  var TITLE_CHOICE = store.get('titleChoice', {});
+
+  function titlesOf(t) {
+    return (t.titles && t.titles.length) ? t.titles : [t.title];
+  }
+  function titleOf(t) {
+    var list = titlesOf(t);
+    var i = TITLE_CHOICE[t.id];
+    return (typeof i === 'number' && list[i]) ? list[i] : list[0];
+  }
+  function pickTitle(id, idx) {
+    TITLE_CHOICE[id] = idx;
+    store.set('titleChoice', TITLE_CHOICE);
+  }
+
   var defaultProfile = function () {
     return {
       major: '软件工程', level: 'course', skills: [], fields: [],
@@ -221,7 +239,7 @@
 
       if (p.advisorAlign === 'yes' && p.advisorField) {
         var toks = tokenize(p.advisorField);
-        var text = t.title + ' ' + (t.tags || []).join(' ') + ' ' + (t.keywords || []).join(' ') + ' ' + t.problem;
+        var text = titlesOf(t).join(' ') + ' ' + (t.tags || []).join(' ') + ' ' + (t.keywords || []).join(' ') + ' ' + t.problem;
         var hit = toks.some(function (w) {
           return text.indexOf(w) > -1 || (w.length > 4 && text.indexOf(w.slice(0, 4)) > -1);
         });
@@ -304,10 +322,11 @@
   function typeTag(t) {
     return '<span class="tag ' + (t.type === 'algorithm' ? 'tag-teal' : t.type === 'hardware' ? 'tag-amber' : 'tag-brand') + '">' + TYPE_LABELS[t.type] + '</span>';
   }
-  function selfCheck(t) {
-    var han = hanCount(t.title);
-    var langBad = /基于\s*(Java|Python|C\+\+|C语言|C#|Go|PHP|JavaScript|Node\.?js|Vue|Spring)/i.test(t.title);
-    var sims = PAST.map(function (p) { return { t: p.t, sim: similarity(t.title, p.t) }; })
+  function selfCheck(t, title) {
+    title = title || titleOf(t);
+    var han = hanCount(title);
+    var langBad = /基于\s*(Java|Python|C\+\+|C语言|C#|PHP|JavaScript|Node\.?js)/i.test(title);
+    var sims = PAST.map(function (p) { return { t: p.t, sim: similarity(title, p.t) }; })
       .sort(function (a, b) { return b.sim - a.sim; });
     return { han: han, langOk: !langBad, maxSim: sims[0] ? sims[0].sim : 0, top: sims.slice(0, 2) };
   }
@@ -647,7 +666,7 @@
         '<span class="spacer"></span>' +
         typeTag(t) +
       '</div>' +
-      '<h3 class="tc-title"><a href="#/topic/' + t.id + '">' + esc(t.title) + '</a></h3>' +
+      '<h3 class="tc-title"><a href="#/topic/' + t.id + '">' + esc(titleOf(t)) + '</a></h3>' +
       '<p class="tc-desc">' + esc(t.oneLine) + '</p>' +
       '<div class="tc-tags">' + t.tags.slice(0, 3).map(function (g) { return '<span class="tag">' + esc(g) + '</span>'; }).join('') + '</div>' +
       (!plain && x.reasons && x.reasons.length ?
@@ -655,7 +674,7 @@
       '<div class="tc-meta">' +
         '<span>' + icon('clock') + '约 ' + t.weeks + ' 周</span>' +
         '<span>' + dots(t.difficulty) + ' ' + DIFF_LABELS[t.difficulty] + '</span>' +
-        '<span>' + icon('book') + hanCount(t.title) + ' 字</span>' +
+        '<span>' + icon('book') + hanCount(titleOf(t)) + ' 字</span>' + (t.titles && t.titles.length > 1 ? '<span>' + icon('layers') + t.titles.length + ' 种表述</span>' : '') +
         (t.hardware ? '<span>' + icon('cpu') + '需硬件</span>' : '') +
       '</div>' +
       '<div class="tc-foot"><a class="link-arrow" href="#/topic/' + t.id + '">查看完整方案 ' + icon('arrow') + '</a>' +
@@ -671,7 +690,9 @@
       return '<div class="page"><div class="container page-pad-lg"><div class="empty"><h3>没有找到这个题目</h3><p>它可能已经从题目库中移除。</p><a class="btn btn-primary btn-sm" href="#/library">回到题目库</a></div></div></div>';
     }
     var f = fieldOf(t);
-    var sc = selfCheck(t);
+    var cur = titleOf(t);
+    var sc = selfCheck(t, cur);
+    var titleOpts = titlesOf(t);
     var related = TOPICS.filter(function (x) { return x.field === t.field && x.id !== t.id; }).slice(0, 3);
     if (related.length < 3) {
       TOPICS.forEach(function (x) {
@@ -683,7 +704,7 @@
       '<div class="crumbs"><a href="#/library">题目库</a>' + icon('chevron') +
         '<a href="#/library">' + f.name + '</a>' + icon('chevron') + '<span>题目详情</span></div>' +
       '<div class="detail-head">' +
-        '<div><h1>' + esc(t.title) + '</h1>' +
+        '<div><h1>' + esc(cur) + '</h1>' +
           '<div class="detail-meta">' +
             '<span>' + icon('layers') + f.name + '</span>' +
             '<span>' + icon('clock') + '约 ' + t.weeks + ' 周</span>' +
@@ -693,6 +714,13 @@
           '</div>' +
         '</div>' +
       '</div>' +
+      (titleOpts.length > 1 ?
+        '<div class="title-options">' +
+          '<div class="to-head"><span class="to-label">题目表述</span><span class="hint">同一个项目，选一个更合适的写法；导出与私信会用你选中的版本</span></div>' +
+          '<div class="chips">' + titleOpts.map(function (x, i) {
+            return '<button class="chip title-chip' + (x === cur ? ' active' : '') + '" data-action="pick-title" data-id="' + t.id + '" data-i="' + i + '">' + esc(x) + '</button>';
+          }).join('') + '</div>' +
+        '</div>' : '') +
       '<div class="detail-grid">' +
         '<div class="detail-main">' +
           '<section class="d-block"><h2>要解决的问题</h2><p>' + esc(t.problem) + '</p></section>' +
@@ -793,7 +821,7 @@
       if (LIB.field !== 'all' && t.field !== LIB.field) return false;
       if (LIB.type !== 'all' && t.type !== LIB.type) return false;
       if (q) {
-        var hay = t.title + ' ' + t.tags.join(' ') + ' ' + t.keywords.join(' ') + ' ' + t.stack.join(' ') + ' ' + FIELDS[t.field].name;
+        var hay = titlesOf(t).join(' ') + ' ' + t.tags.join(' ') + ' ' + t.keywords.join(' ') + ' ' + t.stack.join(' ') + ' ' + FIELDS[t.field].name;
         if (hay.indexOf(q) < 0) return false;
       }
       return true;
@@ -810,7 +838,7 @@
       var f = fieldOf(t);
       return '<article class="lib-card">' +
         '<div style="display:flex;gap:6px;margin-bottom:10px"><span class="tag" style="background:' + f.color + '18;color:' + f.color + '">' + f.short + '</span>' + typeTag(t) + '</div>' +
-        '<h3><a href="#/topic/' + t.id + '">' + esc(t.title) + '</a></h3>' +
+        '<h3><a href="#/topic/' + t.id + '">' + esc(titleOf(t)) + '</a></h3>' +
         '<p class="small muted" style="line-height:1.6;margin-bottom:6px">' + esc(t.oneLine) + '</p>' +
         '<div class="lc-meta"><span>' + icon('clock') + ' ' + t.weeks + ' 周</span><span>' + dots(t.difficulty) + '</span><span>' + hanCount(t.title) + ' 字</span></div>' +
       '</article>';
@@ -864,10 +892,11 @@
   function analyzeTitle(raw) {
     var title = String(raw || '').trim();
     var han = hanCount(title);
-    var langMatch = /基于\s*(Java|Python|C\+\+|C语言|C#|Go|PHP|JavaScript|Node\.?js|Vue|Spring|PHP)/i.exec(title);
+    var langMatch = /基于\s*(Java|Python|C\+\+|C语言|C#|PHP|JavaScript|Node\.?js|PHP)/i.exec(title);
     var vague = /(智慧城市|大数据平台|万物互联|元宇宙|数字孪生城市|综合管理平台|万物智联)/.exec(title);
     var designWord = /(设计与实现|研究与实现|设计与验证|设计与应用|研究与设计|设计与开发)/.test(title);
-    var dup = TOPICS.filter(function (t) { return t.title === title; })[0];
+    var dup = null;
+    TOPICS.forEach(function (t) { if (!dup && titlesOf(t).indexOf(title) > -1) dup = t; });
     var sims = PAST.map(function (p) { return { t: p.t, dir: p.dir, sim: similarity(title, p.t), note: p.note }; })
       .sort(function (a, b) { return b.sim - a.sim; });
     return { title: title, han: han, langMatch: langMatch, vague: vague, designWord: designWord, dup: dup, sims: sims };
@@ -1046,12 +1075,12 @@
     var p = profile || defaultProfile();
     var f = fieldOf(t);
     var feats = t.features.map(function (x, i) { return (i + 1) + '）' + x.t; }).join('；');
-    return '老师您好！我是' + p.major + '专业的学生，初步选定题目《' + t.title + '》。\n\n' +
+    return '老师您好！我是' + p.major + '专业的学生，初步选定题目《' + titleOf(t) + '》。\n\n' +
       '主要功能：' + feats + '。\n\n' +
       '实现技术：' + t.stack.join('、') + '。\n\n' +
       '与现有方案相比：' + t.compare + '\n\n' +
       '预计工作量：约 ' + t.weeks + ' 周，分为 ' + t.steps.length + ' 个阶段推进（' + t.steps.map(function (s) { return s.t; }).join(' → ') + '）。\n\n' +
-      '题目已按学院要求自查：共 ' + hanCount(t.title) + ' 个汉字，未以编程语言命名，与往届题目相似度较低。\n\n' +
+      '题目已按学院要求自查：共 ' + hanCount(titleOf(t)) + ' 个汉字，未以编程语言命名，与往届题目相似度较低。\n\n' +
       '想请您看看这个方向是否合适，需要的话我可以再补充开题思路和技术方案。谢谢老师！';
   }
 
@@ -1078,14 +1107,14 @@
     lines.push('');
     list.forEach(function (t, i) {
       var f = fieldOf(t);
-      lines.push('## ' + (i + 1) + '. ' + t.title);
+      lines.push('## ' + (i + 1) + '. ' + titleOf(t));
       lines.push('');
       lines.push('- 方向：' + f.name + '　|　类型：' + TYPE_LABELS[t.type] + '　|　难度：' + DIFF_LABELS[t.difficulty] + '　|　工作量：约 ' + t.weeks + ' 周' + (t.hardware ? '（需硬件）' : ''));
       lines.push('- 主要功能：' + t.features.map(function (x) { return x.t; }).join('；'));
       lines.push('- 技术栈：' + t.stack.join('、'));
       lines.push('- 技术总结：' + buildSummary(t));
       lines.push('- 设计重点：' + t.design[0] + '；' + t.design[1]);
-      lines.push('- 题目字数：' + hanCount(t.title) + ' / 25');
+      lines.push('- 题目字数：' + hanCount(titleOf(t)) + ' / 25');
       lines.push('');
     });
     return lines.join('\n');
@@ -1093,15 +1122,21 @@
 
   function buildMarkdown(t) {
     var p = profile || defaultProfile();
-    var sc = selfCheck(t);
+    var sc = selfCheck(t, titleOf(t));
     var f = fieldOf(t);
     var lines = [];
     lines.push('# 毕业设计选题说明');
     lines.push('');
     lines.push('## 题目');
     lines.push('');
-    lines.push('《' + t.title + '》');
+    lines.push('《' + titleOf(t) + '》');
     lines.push('');
+    if (titlesOf(t).length > 1) {
+      lines.push('其他可选表述：');
+      lines.push('');
+      titlesOf(t).forEach(function (x, i) { lines.push((i + 1) + '. ' + x); });
+      lines.push('');
+    }
     lines.push('## 基本信息');
     lines.push('');
     lines.push('- 方向：' + f.name);
@@ -1181,6 +1216,14 @@
         RESULT.offset = (RESULT.offset + 1) % pages;
         RESULT.seed += 1;
         render();
+        return;
+      }
+      if (action === 'pick-title' && id) {
+        var idx = parseInt(el.getAttribute('data-i'), 10) || 0;
+        pickTitle(id, idx);
+        var keepY = window.scrollY;
+        render();
+        window.scrollTo(0, keepY);
         return;
       }
       if (action === 'fav' && id) { toggleFav(id); return; }

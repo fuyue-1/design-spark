@@ -2,6 +2,7 @@
 shots/
 assets/store/
 *.log
+tools/*-preview.txt
 
 # 依赖与系统文件
 node_modules/

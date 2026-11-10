@@ -7,7 +7,7 @@ const root = path.join(__dirname, '..');
 const topicFiles = fs.readdirSync(path.join(root, 'assets/data'))
   .filter(f => /^topics-.*\.js$/.test(f)).sort()
   .map(f => 'assets/data/' + f);
-const files = ['assets/data/core.js'].concat(topicFiles);
+const files = ['assets/data/core.js'].concat(topicFiles).concat(['assets/data/title-variants.js']);
 
 const ctx = { window: {}, console };
 vm.createContext(ctx);
@@ -46,18 +46,25 @@ Object.entries(byField).forEach(([k, v]) => console.log('  ' + k.padEnd(8) + v))
 
 let maxPast = { sim: 0 };
 for (const t of topics) {
+  const variants = t.titles && t.titles.length ? t.titles : [t.title];
+  if (variants[0] !== t.title) errors.push(`首选标题与 titles[0] 不一致: ${t.id}`);
+  if (variants.length < 2) warns.push(`只有 1 个题目表述: ${t.id}`);
+  for (const v of variants) {
+    const hv = han(v);
+    if (hv > 25) errors.push(`标题超过 25 字 (${hv}): ${v}`);
+    if (/基于\s*(Java|Python|C\+\+|C语言|C#|PHP|JavaScript|Node\.?js)/i.test(v)) {
+      errors.push(`以语言命名: ${v}`);
+    }
+    if (titles.has(v)) errors.push(`重复标题: ${v}`);
+    titles.add(v);
+  }
   const h = han(t.title);
   if (h > 25) errors.push(`标题超过 25 字 (${h}): ${t.title}`);
   if (h < 10) warns.push(`标题偏短 (${h}): ${t.title}`);
-  if (/基于\s*(Java|Python|C\+\+|C语言|C#|Go|PHP|JavaScript|Node\.?js|Vue|Spring)/i.test(t.title)) {
-    errors.push(`以语言命名: ${t.title}`);
-  }
   if (!B.FIELDS[t.field]) errors.push(`未知方向 ${t.field}: ${t.id}`);
   if (!B.TYPE_LABELS[t.type]) errors.push(`未知类型 ${t.type}: ${t.id}`);
   if (ids.has(t.id)) errors.push(`重复 id: ${t.id}`);
   ids.add(t.id);
-  if (titles.has(t.title)) errors.push(`重复标题: ${t.title}`);
-  titles.add(t.title);
   if (t.features.length !== 4) warns.push(`${t.id} 功能数 ${t.features.length}`);
   if (t.steps.length < 4) warns.push(`${t.id} 阶段数 ${t.steps.length}`);
   if (t.design.length < 3) warns.push(`${t.id} 设计要点 ${t.design.length}`);

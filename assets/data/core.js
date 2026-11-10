@@ -8,7 +8,9 @@
     net:    { name: '网络与分布式',   short: '网络分布式', icon: 'network', desc: '云原生 · 调度 · 可观测', color: '#7c5cd6' },
     iot:    { name: '嵌入式与物联网', short: '嵌入式',   icon: 'cpu',     desc: '软硬结合 · 传感与控制', color: '#c05621' },
     sec:    { name: '信息安全与隐私', short: '安全',     icon: 'shield',  desc: '检测 · 认证 · 水印 · 合规', color: '#bd3a2f' },
-    data:   { name: '数据与可视化',   short: '数据可视化', icon: 'chart',  desc: '分析 · 图谱 · 数字孪生', color: '#2c7a7b' }
+    data:   { name: '数据与可视化',   short: '数据可视化', icon: 'chart',  desc: '分析 · 图谱 · 数字孪生', color: '#2c7a7b' },
+    hci:    { name: '人机交互与体验', short: '人机交互', icon: 'hand',   desc: '交互设计 · 可用性 · 无障碍', color: '#b83280' },
+    media:  { name: '数字媒体与交互', short: '数字媒体', icon: 'play',   desc: 'AR · 互动装置 · 可视化', color: '#553c9a' }
   };
 
   const SKILLS = {
@@ -37,7 +39,11 @@
     viz: '数据可视化',
     three: 'Three.js / WebGL',
     asr: '语音处理',
-    gis: 'GIS / 地图'
+    gis: 'GIS / 地图',
+    unity: 'Unity / 3D',
+    figma: 'Figma / 原型',
+    usability: '可用性测试',
+    ar: 'AR / VR'
   };
 
   const SKILL_ORDER = Object.keys(SKILLS);
@@ -110,6 +116,20 @@
     });
   }
 
+  /* 合并备选表述：titles[0] 为主标题 */
+  function applyVariants(map) {
+    map = map || {};
+    TOPICS.forEach(function (t) {
+      var list = map[t.id] ? map[t.id].slice()
+        : ((t.titles && t.titles.length) ? t.titles.slice() : [t.title]);
+      list = list.filter(function (x) {
+        return (x.match(/[\u4e00-\u9fa5]/g) || []).length <= 25;
+      });
+      t.titles = list;
+      t.title = list[0];
+    });
+  }
+
   window.BSCT = {
     FIELDS: FIELDS,
     SKILLS: SKILLS,
@@ -123,6 +143,7 @@
     DIFF_LABELS: DIFF_LABELS,
     AMBITION: AMBITION,
     TOPICS: TOPICS,
-    addTopics: addTopics
+    addTopics: addTopics,
+    applyVariants: applyVariants
   };
 })();
