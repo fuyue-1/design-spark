@@ -50,13 +50,35 @@ assets/style.css            全部样式（含响应式与打印样式）
 assets/app.js               路由、匹配算法、自检、文案生成
 assets/data/core.js         方向 / 技能 / 场景 / 往届题目
 assets/data/topics-*.js     100 个题目（按方向分八个文件）
-assets/icon.svg             图标
+assets/icon.svg             网页图标
+assets/store/               应用图标与启动图（1024 / 1080×1920）
 manifest.webmanifest        PWA 清单
 tools/validate.js           题目数据校验
 tools/e2e.html              端到端交互测试（同源 iframe 驱动）
 tools/metrics.html          390px 布局溢出检测
 tools/mobile.html           手机尺寸预览
+tools/make-assets.py        生成应用图标与启动图
 ```
+
+## 应用图标与启动图
+
+| 文件 | 尺寸 | 用途 |
+| --- | --- | --- |
+| `assets/store/icon-1024.png` | 1024×1024 | 应用商店 / 上架图标 |
+| `assets/store/splash-1080x1920.png` | 1080×1920 | 竖屏启动图 |
+| `assets/store/icon-512.png` | 512×512 | PWA / Android |
+| `assets/store/icon-192.png` | 192×192 | PWA |
+| `assets/store/icon-180.png` | 180×180 | iOS 主屏图标 |
+
+均为 PNG，单张小于 4 MB；`manifest.webmanifest` 与 `index.html` 已引用 192/512/180 三个尺寸。
+
+重新生成（需要 Pillow 与 Windows 中文字体）：
+
+```bash
+python tools/make-assets.py
+```
+
+设计说明：深色渐变 + 细网格，主视觉为「选题」二字与薄荷色四角星，下划线由靛蓝渐变到薄荷绿；启动图沿用同一套视觉，并展示 100 道题目、8 个方向、18 个往届比对三个数据点。
 
 ## 校验与测试
 
