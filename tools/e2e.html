@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>E2E</title>
+<style>
+  body{font-family:Consolas,monospace;background:#fff;margin:0;padding:16px}
+  iframe{width:1280px;height:800px;border:1px solid #ddd}
+  pre{font-size:13px;line-height:1.6}
+  .ok{color:#0a7a3d}.bad{color:#b42318}
+</style>
+</head>
+<body>
+<pre id="log">running…</pre>
+<iframe id="f" src="../index.html#/match"></iframe>
+<script>
+(function () {
+  var logEl = document.getElementById('log');
+  var frame = document.getElementById('f');
+  var results = [];
+  var errors = [];
+
+  function wait(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+  function doc() { return frame.contentDocument; }
+  function q(sel) { return doc().querySelector(sel); }
+  function qa(sel) { return Array.prototype.slice.call(doc().querySelectorAll(sel)); }
+  function ok(name, cond, extra) {
+    results.push({ name: name, pass: !!cond, extra: extra || '' });
+  }
+  function click(el) { if (!el) throw new Error('element missing'); el.click(); }
+  function type(el, value) {
+    if (!el) throw new Error('input missing');
+    el.value = value;
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+  function summary() {
+    var pass = results.filter(function (r) { return r.pass; }).length;
+    var fail = results.length - pass;
+    logEl.innerHTML = results.map(function (r) {
+      return '<span class="' + (r.pass ? 'ok' : 'bad') + '">' + (r.pass ? 'PASS' : 'FAIL') + '</span>  ' +
+        r.name + (r.extra ? '  [' + r.extra + ']' : '');
+    }).join('\n') + '\n\nTOTAL ' + results.length + ' PASS ' + pass + ' FAIL ' + fail +
+      (errors.length ? '\nERRORS ' + errors.join(' | ') : '');
+    document.title = fail === 0 && errors.length === 0 ? 'E2E_PASS' : 'E2E_FAIL';
+  }
+
+  frame.addEventListener('load', async function () {
+    try {
+      frame.contentWindow.addEventListener('error', function (e) {
+        errors.push(e.message || 'script error');
+      });
+
+      await wait(200);
+      ok('首屏渲染 / 步骤 1', /基础情况/.test(q('.rail').textContent), q('.wizard-head h1').textContent.trim());
+
+      click(q('[data-skill="python"]'));
+      ok('技能 chip 选中', q('[data-skill="python"]').classList.contains('active'));
+
+      click(q('[data-step="next"]'));
+      await wait(80);
+      ok('进入兴趣方向', /方向/.test(q('.wizard-head h1').textContent), q('.wizard-head h1').textContent.trim());
+
+      click(q('[data-step="next"]'));
+      await wait(80);
+      ok('未选方向时被拦截', q('.form-error').classList.contains('show'), q('.form-error').textContent.trim());
+
+      click(q('[data-field="llm"]'));
+      await wait(20);
+      ok('选择方向后错误提示消失', !q('.form-error').classList.contains('show'));
+      click(q('[data-step="next"]'));
+      await wait(80);
+      ok('进入项目经历', /做过什么/.test(q('.wizard-head h1').textContent), q('.wizard-head h1').textContent.trim());
+
+      type(q('[data-bind="expText"]'), '做过课程问答机器人，用过大模型 API');
+      click(q('[data-scene="教育"]'));
+      click(q('[data-step="next"]'));
+      await wait(80);
+      ok('进入导师与约束', /约束/.test(q('.wizard-head h1').textContent), q('.wizard-head h1').textContent.trim());
+
+      click(q('[data-seg="advisorAlign"][data-key="yes"]'));
+      await wait(80);
+      type(q('[data-bind="advisorField"]'), '知识图谱');
+      click(q('[data-step="next"]'));
+      await wait(250);
+
+      ok('跳转到结果页', /为你匹配到/.test(q('.page-head h1').textContent), q('.page-head h1').textContent.trim());
+      ok('结果卡片 6 个', qa('.result-grid .topic-card').length === 6, String(qa('.result-grid .topic-card').length));
+      ok('匹配度环渲染', qa('.match-ring').length === 6);
+
+      var dlName = null;
+      var proto = frame.contentWindow.HTMLAnchorElement.prototype;
+      var origClick = proto.click;
+      proto.click = function () { dlName = this.download; };
+      var lastBlob = null;
+      var origCreate = frame.contentWindow.URL.createObjectURL;
+      frame.contentWindow.URL.createObjectURL = function (b) { lastBlob = b; return origCreate.call(this, b); };
+
+      click(q('[data-action="export-page"]'));
+      await wait(80);
+      ok('导出本页方案', /^选题备选_6个\.md$/.test(dlName || ''), dlName || '');
+
+      var listTxt = lastBlob ? await lastBlob.text() : '';
+      ok('清单包含技术总结', listTxt.indexOf('选题备选清单') > -1 && listTxt.indexOf('技术总结：本题属于') > -1);
+
+      dlName = null;
+      click(q('.result-grid .topic-card [data-action="export"]'));
+      await wait(80);
+      ok('单题导出选题说明', /^选题说明_.+\.md$/.test(dlName || ''), dlName || '');
+
+      var oneTxt = lastBlob ? await lastBlob.text() : '';
+      ok('选题说明包含摘要与技术栈', oneTxt.indexOf('## 摘要') > -1 && oneTxt.indexOf('技术栈：') > -1);
+
+      click(q('[data-filter="algorithm"]'));
+      await wait(80);
+      var types = qa('.result-grid .topic-card .tag').map(function (x) { return x.textContent; });
+      ok('类型筛选生效', types.indexOf('系统开发') === -1, types.slice(0, 4).join(','));
+      click(q('[data-filter="all"]'));
+      await wait(60);
+
+      var firstHref = q('.result-grid .topic-card a').getAttribute('href');
+      frame.contentWindow.location.hash = firstHref;
+      await wait(200);
+      ok('进入题目详情', qa('.detail-main .d-block').length >= 6, String(qa('.detail-main .d-block').length));
+
+      click(q('[data-action="fav"]'));
+      await wait(60);
+      var favs = JSON.parse(frame.contentWindow.localStorage.getItem('bsct.favs') || '[]');
+      ok('收藏写入 localStorage', favs.length === 1);
+
+      click(q('[data-action="message"]'));
+      await wait(80);
+      var msg = q('#msg-text');
+      ok('私信弹窗生成文案', msg && /老师您好/.test(msg.value) && /主要功能/.test(msg.value));
+
+      click(q('.modal-head .x'));
+      await wait(60);
+      ok('弹窗可关闭', q('.modal-backdrop') === null);
+
+      frame.contentWindow.location.hash = '#/check';
+      await wait(200);
+      type(q('#checker-input'), '基于Python的图书管理系统');
+      await wait(60);
+      ok('自检识别语言命名', qa('.check-row .verdict.bad').length >= 1);
+      ok('相似度列表渲染', qa('.sim-item').length === 4);
+
+      frame.contentWindow.location.hash = '#/library';
+      await wait(200);
+      ok('题目库渲染 100 个', qa('#lib-grid .lib-card').length === 100, String(qa('#lib-grid .lib-card').length));
+      type(q('#lib-search'), '养老');
+      await wait(60);
+      ok('题目库搜索', /共 [1-9]/.test(q('#lib-count').textContent), q('#lib-count').textContent);
+
+      frame.contentWindow.location.hash = '#/saved';
+      await wait(200);
+      ok('收藏页显示 1 个', qa('.saved-grid .topic-card').length === 1);
+      dlName = null;
+      click(q('[data-action="export-saved"]'));
+      await wait(80);
+      ok('导出收藏备选清单', /^收藏备选_1个\.md$/.test(dlName || ''), dlName || '');
+      proto.click = origClick;
+
+      frame.contentWindow.location.hash = '#/guide';
+      await wait(200);
+      ok('规则页表格 18 行', qa('.past-table tbody tr').length === 18);
+    } catch (e) {
+      errors.push(e.message);
+    }
+    summary();
+  });
+})();
+</script>
+</body>
+</html>

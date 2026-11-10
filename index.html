@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>毕设选题参谋 · 计算机类本科毕业设计选题推荐</title>
+<meta name="description" content="根据专业基础、兴趣方向和导师约束，为计算机类本科生推荐符合学院规范的毕业设计题目，附功能设计、技术栈、实施计划与导师沟通文案。">
+<meta name="theme-color" content="#0d0f1a">
+<link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<a class="skip-link" href="#app">跳到主要内容</a>
+
+<header class="nav" id="nav">
+  <div class="container nav-inner">
+    <a class="brand" href="#/home" aria-label="毕设选题参谋 首页">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/>
+          <path d="M4 20.5A2.5 2.5 0 0 1 6.5 18H20"/>
+          <path d="M9 8h7M9 11.5h4.5"/>
+        </svg>
+      </span>
+      <span class="brand-text">
+        <strong>毕设选题参谋</strong>
+        <small>THESIS TOPIC ADVISOR</small>
+      </span>
+    </a>
+
+    <nav class="nav-links" aria-label="主导航">
+      <a class="nav-link" href="#/match" data-nav="match">开始选题</a>
+      <a class="nav-link" href="#/library" data-nav="library">题目库</a>
+      <a class="nav-link" href="#/check" data-nav="check">题目自检</a>
+      <a class="nav-link" href="#/guide" data-nav="guide">选题规则</a>
+    </nav>
+
+    <div class="nav-actions">
+      <a class="nav-saved" href="#/saved" data-nav="saved" aria-label="我的收藏">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20s-7-4.4-7-9.3A3.7 3.7 0 0 1 12 8a3.7 3.7 0 0 1 7 2.7C19 15.6 12 20 12 20z"/></svg>
+        <span id="saved-count">0</span>
+      </a>
+      <a class="btn btn-primary btn-sm nav-cta" href="#/match">开始测评</a>
+    </div>
+  </div>
+</header>
+
+<main id="app" tabindex="-1"></main>
+
+<footer class="footer">
+  <div class="container footer-inner">
+    <div class="footer-brand">
+      <strong>毕设选题参谋</strong>
+      <p>面向计算机类本科毕业设计的选题工具。题目库与实施建议为示例，最终选题请与指导教师确认。</p>
+    </div>
+    <div class="footer-links">
+      <a href="#/match">开始选题</a>
+      <a href="#/library">题目库</a>
+      <a href="#/check">题目自检</a>
+      <a href="#/guide">选题规则</a>
+    </div>
+  </div>
+  <div class="container footer-bottom">
+    <span>本地运行 · 数据仅保存在本机浏览器</span>
+    <span>选题自检依据：一人一题 · 题目 ≤25 字 · 不以编程语言命名</span>
+  </div>
+</footer>
+
+<div id="modal-root"></div>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<noscript><div class="noscript">需要启用 JavaScript 才能使用选题测评功能。</div></noscript>
+
+<script src="assets/data/core.js"></script>
+<script src="assets/data/topics-llm-ai.js"></script>
+<script src="assets/data/topics-web-mobile.js"></script>
+<script src="assets/data/topics-net-iot.js"></script>
+<script src="assets/data/topics-sec-data.js"></script>
+<script src="assets/data/topics-llm-ai-2.js"></script>
+<script src="assets/data/topics-web-mobile-2.js"></script>
+<script src="assets/data/topics-net-iot-2.js"></script>
+<script src="assets/data/topics-sec-data-2.js"></script>
+<script src="assets/app.js"></script>
+</body>
+</html>

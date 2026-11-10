@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="utf-8"><title>metrics</title>
+<style>body{margin:0;font:13px Consolas,monospace}iframe{width:390px;height:900px;border:0;position:absolute;left:-9999px}pre{padding:12px}</style>
+</head><body>
+<pre id="out">measuring…</pre>
+<iframe id="f"></iframe>
+<script>
+(function(){
+  var f=document.getElementById('f');
+  var page=new URLSearchParams(location.search).get('p')||'home';
+  f.src='../index.html#/'+page;
+  f.addEventListener('load',function(){
+    setTimeout(function(){
+      var d=f.contentDocument, w=f.contentWindow;
+      var cw=d.documentElement.clientWidth, sw=d.documentElement.scrollWidth;
+      var lines=['page='+page+' innerWidth='+w.innerWidth+' client='+cw+' scroll='+sw+' scrollX='+w.scrollX+' bodyW='+Math.round(d.body.getBoundingClientRect().width)];
+      var bad=[];
+      Array.prototype.forEach.call(d.querySelectorAll('body *'),function(el){
+        var r=el.getBoundingClientRect();
+        if(r.width>cw+2 || r.right>cw+2){
+          if(r.width>0 && r.height>0) bad.push((el.tagName+'.'+(el.className||'')).slice(0,54)+' w='+Math.round(r.width)+' left='+Math.round(r.left)+' right='+Math.round(r.right));
+        }
+      });
+      document.getElementById('out').textContent=lines.concat(bad.slice(0,14)).join('\n');
+      document.title='METRICS_DONE';
+    },400);
+  });
+})();
+</script>
+</body></html>
