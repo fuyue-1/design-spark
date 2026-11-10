@@ -1,5 +1,6 @@
 # 截图与本地临时文件
 shots/
+assets/store/
 *.log
 
 # 依赖与系统文件

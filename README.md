@@ -4,9 +4,14 @@
 
 纯前端、零依赖、可离线：双击 `index.html` 就能用，数据只存在本机浏览器里。
 
+**在线访问：** https://fuyue-1.github.io/design-spark/
+
+当前为网页版：纯静态站点，直接在浏览器中使用，也可以部署到任意静态托管。
+
 ## 打开方式
 
-- **直接双击 `index.html`**（推荐）。所有脚本都是普通 `<script>`，`file://` 下也能正常运行。
+- **在线使用**：打开 https://fuyue-1.github.io/design-spark/ 。
+- **直接双击 `index.html`**（离线使用）。所有脚本都是普通 `<script>`，`file://` 下也能正常运行。
 - 或起一个静态服务器：`python -m http.server 8080`，访问 `http://localhost:8080`。
   用 `http://` 打开时还能把页面「添加到主屏幕」，以独立窗口运行（`manifest.webmanifest`）。
 
@@ -50,12 +55,13 @@ assets/style.css            全部样式（含响应式与打印样式）
 assets/app.js               路由、匹配算法、自检、文案生成
 assets/data/core.js         方向 / 技能 / 场景 / 往届题目
 assets/data/topics-*.js     100 个题目（按方向分八个文件）
-assets/icon.svg             图标
+assets/icon.svg             网页图标
 manifest.webmanifest        PWA 清单
 tools/validate.js           题目数据校验
 tools/e2e.html              端到端交互测试（同源 iframe 驱动）
 tools/metrics.html          390px 布局溢出检测
 tools/mobile.html           手机尺寸预览
+tools/make-assets.py        生成应用图标与启动图（输出到本地，不随仓库分发）
 ```
 
 ## 校验与测试
@@ -98,4 +104,3 @@ node tools/validate.js
 
 - 题目、工作量与排期是示例，提交前请和指导教师确认数据、设备与场地是否可得。
 - 往届题目仅用于相似度比对，不代表最终查重结论。
-- 当前是网页版。若要打包成 Android APK，可用 Capacitor / TWA 套壳（需本机 Android SDK），无需改动现有代码。
